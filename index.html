@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Temperature Converter</title>
+  <style>
+    :root{--bg:#f1f5f9;--card:#fff;--accent:#2b7cff;--muted:#6b7280}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:linear-gradient(180deg,#eef2f7 0%,var(--bg)100%);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px}
+
+    .card{
+      width:380px;max-width:94vw;background:var(--card);border-radius:20px;padding:28px 22px;box-shadow:0 10px 30px rgba(11,22,48,0.08);
+    }
+    h1{margin:0 0 18px;font-size:20px;text-align:center}
+
+    .row{display:flex;gap:16px;align-items:flex-end}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+    input[type="number"], select{width:100%;padding:10px 8px;border:0;border-bottom:1px solid #e6e9ef;font-size:18px;outline:none}
+    input[type="number"]:focus, select:focus{border-bottom-color:var(--accent)}
+
+    .result{
+      margin-top:18px;padding:14px 12px;border-radius:10px;background:#fafbfd;border:1px solid #eceff6;font-size:18px;min-height:44px;display:flex;align-items:center;justify-content:space-between
+    }
+    .result .value{font-weight:600}
+
+    .btn{
+      margin-top:20px;background:var(--accent);color:#fff;border:0;padding:12px 16px;border-radius:12px;width:100%;font-size:17px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(43,124,255,0.18)
+    }
+    .btn:active{transform:translateY(1px)}
+
+    .tiny{font-size:12px;color:var(--muted);margin-top:8px;text-align:center}
+
+    /* small screens: stack */
+    @media (max-width:460px){
+      .row{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <main class="card" aria-labelledby="title">
+    <h1 id="title">Temperature converter</h1>
+
+    <div class="form">
+      <div style="margin-bottom:14px">
+        <label for="degrees">Degrees</label>
+        <input id="degrees" type="number" inputmode="decimal" placeholder="e.g. 72" />
+      </div>
+
+      <div class="row">
+        <div style="flex:1">
+          <label for="from">From</label>
+          <select id="from" aria-label="Convert from">
+            <option value="C">Celsius (°C)</option>
+            <option value="F">Fahrenheit (°F)</option>
+            <option value="K">Kelvin (K)</option>
+          </select>
+        </div>
+        <div style="width:140px">
+          <label for="to">To</label>
+          <select id="to" aria-label="Convert to">
+            <option value="F">Fahrenheit (°F)</option>
+            <option value="C">Celsius (°C)</option>
+            <option value="K">Kelvin (K)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="result" id="result" role="status" aria-live="polite">
+        <div class="value">—</div>
+        <div class="unit"></div>
+      </div>
+
+      <button class="btn" id="convert">Convert</button>
+      <div class="tiny">Press Enter in the Degrees field to convert too. Input is validated to be a number.</div>
+    </div>
+  </main>
+
+  <script>
+    // Helper conversions
+    function cToF(c){return (c * 9/5) + 32}
+    function fToC(f){return (f - 32) * 5/9}
+    function cToK(c){return c + 273.15}
+    function kToC(k){return k - 273.15}
+
+    // Main convert function
+    function convert(){
+      const degreesEl = document.getElementById('degrees');
+      const from = document.getElementById('from').value;
+      const to = document.getElementById('to').value;
+      const resultEl = document.getElementById('result');
+      const valueEl = resultEl.querySelector('.value');
+      const unitEl = resultEl.querySelector('.unit');
+
+      const raw = degreesEl.value.trim();
+      if(raw.length === 0){
+        valueEl.textContent = 'Please enter a number';
+        unitEl.textContent = '';
+        return;
+      }
+
+      // validation: check it's a finite number
+      const n = Number(raw);
+      if(!isFinite(n)){
+        valueEl.textContent = 'Invalid number';
+        unitEl.textContent = '';
+        return;
+      }
+
+      let celsius;
+      // first convert input to Celsius
+      if(from === 'C') celsius = n;
+      else if(from === 'F') celsius = fToC(n);
+      else if(from === 'K') celsius = kToC(n);
+
+      let out;
+      let unitLabel;
+      if(to === 'C'){
+        out = celsius; unitLabel = '°C';
+      } else if(to === 'F'){
+        out = cToF(celsius); unitLabel = '°F';
+      } else if(to === 'K'){
+        out = cToK(celsius); unitLabel = 'K';
+      }
+
+      // reasonable formatting: show up to 4 decimal places but trim trailing zeros
+      const formatted = Number.parseFloat(out.toFixed(4)).toString();
+      valueEl.textContent = formatted;
+      unitEl.textContent = unitLabel;
+    }
+
+    document.getElementById('convert').addEventListener('click', convert);
+    document.getElementById('degrees').addEventListener('keydown', function(e){
+      if(e.key === 'Enter') convert();
+    });
+
+    // Optional: keep "from" and "to" different by default; if user picks same, show identical result.
+    // Live update when selects change
+    document.getElementById('from').addEventListener('change', function(){
+      // if both selects equal and user prefers auto-switch, do nothing; we'll allow same-unit conversions.
+    });
+
+    // Friendly: show placeholder example result when page loads
+    (function init(){
+      const valueEl = document.querySelector('.result .value');
+      const unitEl = document.querySelector('.result .unit');
+      valueEl.textContent = '—'; unitEl.textContent = '';
+    })();
+  </script>
+</body>
+</html>
